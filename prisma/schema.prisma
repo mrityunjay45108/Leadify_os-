@@ -1,0 +1,548 @@
+// Leadyfy OS — Prisma Schema
+// Normalized relational schema for Agency Management SaaS
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// AUTH & USERS
+// ─────────────────────────────────────────────
+
+enum UserRole {
+  OWNER
+  ADMIN
+  EMPLOYEE
+  CLIENT
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String
+  role          UserRole  @default(EMPLOYEE)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  employee      Employee?
+  client        Client?
+  assignedTasks Task[]    @relation("TaskAssignee")
+  createdTasks  Task[]    @relation("TaskCreator")
+  notifications Notification[]
+  activityLogs  ActivityLog[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// EMPLOYEES
+// ─────────────────────────────────────────────
+
+model Employee {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone        String?
+  department   String?
+  designation  String?
+  salary       Decimal?  @db.Decimal(12, 2)
+  joinedAt     DateTime?
+  permissions  Json      @default("{}")
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  assignedClients Client[]  @relation("ClientEmployee")
+  shoots          Shoot[]   @relation("ShootManager")
+  expenses        Expense[]
+
+  @@map("employees")
+}
+
+// ─────────────────────────────────────────────
+// CLIENTS
+// ─────────────────────────────────────────────
+
+enum ClientStatus {
+  LEAD
+  NEW
+  ONBOARDING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  INACTIVE
+}
+
+model Client {
+  id               String       @id @default(cuid())
+  userId           String?      @unique
+  user             User?        @relation(fields: [userId], references: [id])
+  name             String
+  companyName      String?
+  email            String       @unique
+  phone            String?
+  whatsapp         String?
+  brandName        String?
+  industry         String?
+  gstNumber        String?
+  assignedEmployeeId String?
+  assignedEmployee Employee?    @relation("ClientEmployee", fields: [assignedEmployeeId], references: [id])
+  source           String?
+  status           ClientStatus @default(NEW)
+  notes            String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  orders           Order[]
+  scripts          Script[]
+  shoots           Shoot[]
+  videos           Video[]
+  payments         Payment[]
+  supportTickets   SupportTicket[]
+  assets           Asset[]
+  activityLogs     ActivityLog[]
+
+  @@map("clients")
+}
+
+// ─────────────────────────────────────────────
+// ORDERS / PACKAGES
+// ─────────────────────────────────────────────
+
+enum OrderStatus {
+  NEW
+  ONBOARDING
+  IN_PRODUCTION
+  PARTIALLY_DELIVERED
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+model Order {
+  id                String      @id @default(cuid())
+  clientId          String
+  client            Client      @relation(fields: [clientId], references: [id])
+  packageName       String
+  videoCount        Int
+  pricing           Decimal     @db.Decimal(12, 2)
+  gstAmount         Decimal?    @db.Decimal(12, 2)
+  totalInvoice      Decimal     @db.Decimal(12, 2)
+  amountReceived    Decimal     @default(0) @db.Decimal(12, 2)
+  outstandingBalance Decimal    @default(0) @db.Decimal(12, 2)
+  startDate         DateTime?
+  dueDate           DateTime?
+  status            OrderStatus @default(NEW)
+  assignedTeam      String?
+  notes             String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Live production counters
+  assignedVideos    Int         @default(0)
+  completedVideos   Int         @default(0)
+  deliveredVideos   Int         @default(0)
+
+  scripts           Script[]
+  shoots            Shoot[]
+  videos            Video[]
+  payments          Payment[]
+  creatorPayouts    CreatorPayout[]
+
+  @@map("orders")
+}
+
+// ─────────────────────────────────────────────
+// CREATORS
+// ─────────────────────────────────────────────
+
+enum CreatorAvailabilityStatus {
+  AVAILABLE
+  BOOKED
+  UNAVAILABLE
+  ON_HOLD
+}
+
+model Creator {
+  id            String                    @id @default(cuid())
+  name          String
+  photo         String?
+  gender        String?
+  ageGroup      String?
+  languages     String[]
+  location      String?
+  niches        String[]
+  demographics  String?
+  email         String?
+  phone         String?
+  instagramUrl  String?
+  portfolioUrl  String?
+  ratePerVideo  Decimal?                  @db.Decimal(10, 2)
+  bankName      String?
+  accountNumber String?
+  ifscCode      String?
+  upiId         String?
+  availability  CreatorAvailabilityStatus @default(AVAILABLE)
+  isActive      Boolean                   @default(true)
+  notes         String?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+
+  scripts        Script[]
+  shoots         Shoot[]
+  videos         Video[]
+  creatorPayouts CreatorPayout[]
+
+  @@map("creators")
+}
+
+// ─────────────────────────────────────────────
+// SCRIPTS
+// ─────────────────────────────────────────────
+
+enum ScriptStatus {
+  DRAFT
+  ASSIGNED
+  IN_REVIEW
+  SENT_TO_CLIENT
+  REVISION_REQUIRED
+  APPROVED
+  READY_FOR_SHOOT
+}
+
+model Script {
+  id              String       @id @default(cuid())
+  clientId        String
+  client          Client       @relation(fields: [clientId], references: [id])
+  orderId         String
+  order           Order        @relation(fields: [orderId], references: [id])
+  videoNumber     Int
+  writerId        String?
+  creatorId       String?
+  creator         Creator?     @relation(fields: [creatorId], references: [id])
+  language        String?
+  scriptText      String?
+  referenceLinks  String[]
+  deadline        DateTime?
+  revisionCount   Int          @default(0)
+  status          ScriptStatus @default(DRAFT)
+  internalNotes   String?
+  clientFeedback  String?
+  approvedAt      DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  videos          Video[]
+  shoots          Shoot[]      @relation("ShootScripts")
+
+  @@map("scripts")
+}
+
+// ─────────────────────────────────────────────
+// SHOOTS
+// ─────────────────────────────────────────────
+
+enum ShootStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  RESHOOT_REQUIRED
+}
+
+model Shoot {
+  id                String      @id @default(cuid())
+  clientId          String
+  client            Client      @relation(fields: [clientId], references: [id])
+  orderId           String
+  order             Order       @relation(fields: [orderId], references: [id])
+  scheduledDate     DateTime
+  location          String?
+  creatorId         String?
+  creator           Creator?    @relation(fields: [creatorId], references: [id])
+  cameraman         String?
+  shootManagerId    String?
+  shootManager      Employee?   @relation("ShootManager", fields: [shootManagerId], references: [id])
+  shootingAssistant String?
+  specialNotes      String?
+  status            ShootStatus @default(SCHEDULED)
+
+  // Checklists
+  scriptApproved    Boolean     @default(false)
+  creatorConfirmed  Boolean     @default(false)
+  locationCleared   Boolean     @default(false)
+  productReceived   Boolean     @default(false)
+  teamBriefed       Boolean     @default(false)
+  footageUploaded   Boolean     @default(false)
+  rawFilesVerified  Boolean     @default(false)
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  approvedScripts   Script[]    @relation("ShootScripts")
+  videos            Video[]
+
+  @@map("shoots")
+}
+
+// ─────────────────────────────────────────────
+// VIDEOS — Core Production Pipeline
+// ─────────────────────────────────────────────
+
+enum VideoStatus {
+  SCRIPT_APPROVED
+  SHOOT_PENDING
+  RAW_FOOTAGE_RECEIVED
+  VIDEO_EDITING
+  INTERNAL_QA
+  CLIENT_REVIEW
+  REVISION
+  FINAL_APPROVED
+  DELIVERED
+}
+
+model Video {
+  id               String      @id @default(cuid())
+  clientId         String
+  client           Client      @relation(fields: [clientId], references: [id])
+  orderId          String
+  order            Order       @relation(fields: [orderId], references: [id])
+  scriptId         String?
+  script           Script?     @relation(fields: [scriptId], references: [id])
+  creatorId        String?
+  creator          Creator?    @relation(fields: [creatorId], references: [id])
+  shootId          String?
+  shoot            Shoot?      @relation(fields: [shootId], references: [id])
+  assignedEditorId String?
+  deadline         DateTime?
+  videoFileUrl     String?
+  driveLink        String?
+  thumbnailUrl     String?
+  finalDeliveryUrl String?
+  revisionCount    Int         @default(0)
+  status           VideoStatus @default(SCRIPT_APPROVED)
+  deliveredAt      DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  feedbackLogs     VideoFeedback[]
+
+  @@map("videos")
+}
+
+model VideoFeedback {
+  id          String   @id @default(cuid())
+  videoId     String
+  video       Video    @relation(fields: [videoId], references: [id])
+  authorId    String?
+  authorType  String   // "CLIENT" | "INTERNAL"
+  feedback    String
+  timestamp   String?  // e.g. "01:23" for timestamped review
+  createdAt   DateTime @default(now())
+
+  @@map("video_feedback")
+}
+
+// ─────────────────────────────────────────────
+// TASKS
+// ─────────────────────────────────────────────
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+model Task {
+  id           String       @id @default(cuid())
+  title        String
+  description  String?
+  priority     TaskPriority @default(MEDIUM)
+  status       TaskStatus   @default(TODO)
+  assigneeId   String?
+  assignee     User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdById  String?
+  createdBy    User?        @relation("TaskCreator", fields: [createdById], references: [id])
+  dueDate      DateTime?
+  attachments  String[]
+  relatedType  String?      // "client" | "order" | "shoot" | "video"
+  relatedId    String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@map("tasks")
+}
+
+// ─────────────────────────────────────────────
+// FINANCIALS
+// ─────────────────────────────────────────────
+
+enum PaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  clientId        String
+  client          Client        @relation(fields: [clientId], references: [id])
+  orderId         String
+  order           Order         @relation(fields: [orderId], references: [id])
+  invoiceAmount   Decimal       @db.Decimal(12, 2)
+  amountReceived  Decimal       @default(0) @db.Decimal(12, 2)
+  pendingBalance  Decimal       @default(0) @db.Decimal(12, 2)
+  paymentDate     DateTime?
+  method          String?       // UPI, Bank Transfer, Cash, etc.
+  transactionRef  String?
+  status          PaymentStatus @default(UNPAID)
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("payments")
+}
+
+enum ExpenseCategory {
+  SALARIES
+  OFFICE
+  STUDIO
+  EQUIPMENT
+  FUEL
+  CREATOR_PAYOUTS
+  MARKETING
+  MISC
+}
+
+model Expense {
+  id          String          @id @default(cuid())
+  category    ExpenseCategory
+  amount      Decimal         @db.Decimal(12, 2)
+  description String?
+  userId      String?
+  employee    Employee?       @relation(fields: [userId], references: [id])
+  date        DateTime
+  receiptUrl  String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@map("expenses")
+}
+
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  PAID
+}
+
+model CreatorPayout {
+  id             String       @id @default(cuid())
+  creatorId      String
+  creator        Creator      @relation(fields: [creatorId], references: [id])
+  orderId        String?
+  order          Order?       @relation(fields: [orderId], references: [id])
+  videoCount     Int          @default(0)
+  ratePerVideo   Decimal      @db.Decimal(10, 2)
+  totalPayout    Decimal      @db.Decimal(12, 2)
+  paymentDate    DateTime?
+  reference      String?
+  status         PayoutStatus @default(PENDING)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("creator_payouts")
+}
+
+// ─────────────────────────────────────────────
+// NOTIFICATIONS
+// ─────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      String   // "script" | "shoot" | "video" | "payment" | "task" | "system"
+  isRead    Boolean  @default(false)
+  linkUrl   String?
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────────
+// SUPPORT TICKETS
+// ─────────────────────────────────────────────
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+model SupportTicket {
+  id          String       @id @default(cuid())
+  clientId    String
+  client      Client       @relation(fields: [clientId], references: [id])
+  subject     String
+  description String
+  status      TicketStatus @default(OPEN)
+  priority    TaskPriority @default(MEDIUM)
+  resolvedAt  DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("support_tickets")
+}
+
+// ─────────────────────────────────────────────
+// ACTIVITY LOGS
+// ─────────────────────────────────────────────
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  clientId   String?
+  client     Client?  @relation(fields: [clientId], references: [id])
+  action     String   // "created_client", "approved_script", "delivered_video", etc.
+  entityType String?  // "client" | "order" | "video" | "payment"
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@map("activity_logs")
+}
+
+// ─────────────────────────────────────────────
+// ASSETS
+// ─────────────────────────────────────────────
+
+model Asset {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id])
+  name        String
+  fileUrl     String
+  fileType    String?
+  description String?
+  uploadedAt  DateTime @default(now())
+
+  @@map("assets")
+}
