@@ -57,7 +57,7 @@ export function ActivityFeed({ logs }: { logs: any[] }) {
 
       {/* Feed Table */}
       <div className="rounded-xl border border-[#222] bg-[#1a1a1a] overflow-hidden">
-        <table className="w-full text-sm text-left">
+        <div className="overflow-x-auto"><table className="w-full text-sm text-left">
           <thead className="bg-[#111] border-b border-[#222]">
             <tr>
               <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Timestamp</th>
@@ -99,7 +99,7 @@ export function ActivityFeed({ logs }: { logs: any[] }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
         {filtered.length === 0 && (
           <div className="p-8 text-center text-gray-500">No activity matches your filters.</div>
         )}

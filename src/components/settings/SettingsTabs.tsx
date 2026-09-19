@@ -63,7 +63,7 @@ export function SettingsTabs({
               <p className="text-sm text-gray-500">{users.length} accounts</p>
             </div>
             <div className="rounded-xl border border-[#222] bg-[#1a1a1a] overflow-hidden">
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto"><table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[#222]">
                     <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
@@ -104,7 +104,7 @@ export function SettingsTabs({
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </div>
         )}

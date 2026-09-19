@@ -55,7 +55,7 @@ export function OrdersTable({ orders }: { orders: OrderWithRelations[] }) {
         </select>
       </div>
 
-      <table className="w-full text-sm">
+      <div className="overflow-x-auto"><table className="w-full text-sm">
         <thead>
           <tr className="border-b border-[#222] text-left">
             <th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Package</th>
@@ -128,7 +128,7 @@ export function OrdersTable({ orders }: { orders: OrderWithRelations[] }) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </div>
   )
 }

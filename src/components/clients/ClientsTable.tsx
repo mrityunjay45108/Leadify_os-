@@ -65,7 +65,7 @@ export function ClientsTable({ clients }: ClientsTableProps) {
       </div>
 
       {/* Table */}
-      <table className="w-full text-sm">
+      <div className="overflow-x-auto"><table className="w-full text-sm">
         <thead>
           <tr className="border-b border-[#222] text-left">
             <th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
@@ -130,7 +130,7 @@ export function ClientsTable({ clients }: ClientsTableProps) {
             ))
           )}
         </tbody>
-      </table>
+      </table></div>
     </div>
   )
 }

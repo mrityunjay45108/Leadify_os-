@@ -65,7 +65,7 @@ export function FinancialsOverview({ payments, expenses, payouts }: Props) {
 
       {/* Payments */}
       {tab === 'payments' && (
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[#222] text-left">
               <th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
@@ -96,12 +96,12 @@ export function FinancialsOverview({ payments, expenses, payouts }: Props) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
 
       {/* Expenses */}
       {tab === 'expenses' && (
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[#222] text-left">
               <th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
@@ -124,12 +124,12 @@ export function FinancialsOverview({ payments, expenses, payouts }: Props) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
 
       {/* Creator Payouts */}
       {tab === 'payouts' && (
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[#222] text-left">
               <th className="px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Creator</th>
@@ -158,7 +158,7 @@ export function FinancialsOverview({ payments, expenses, payouts }: Props) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
     </div>
   )
