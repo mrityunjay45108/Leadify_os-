@@ -5,13 +5,23 @@ import { Plus } from 'lucide-react'
 import { OrdersTable } from '@/components/orders/OrdersTable'
 
 export default async function OrdersPage() {
-  const orders = await db.order.findMany({
+  const raw = await db.order.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
       client: { select: { name: true, companyName: true } },
-      _count: { select: { videos: true, scripts: true } },
+      _count:  { select: { videos: true, scripts: true } },
     },
   })
+
+  // Serialize Decimal fields — Prisma Decimal can't be passed to Client Components
+  const orders = raw.map((o) => ({
+    ...o,
+    pricing:            Number(o.pricing),
+    gstAmount:          Number(o.gstAmount),
+    totalInvoice:       Number(o.totalInvoice),
+    amountReceived:     Number(o.amountReceived),
+    outstandingBalance: Number(o.outstandingBalance),
+  }))
 
   return (
     <div>
