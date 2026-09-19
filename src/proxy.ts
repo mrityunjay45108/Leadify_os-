@@ -12,6 +12,7 @@ const roleRoutes: Record<string, UserRole[]> = {
   '/creators':   ['OWNER', 'ADMIN', 'EMPLOYEE'],
   '/shoots':     ['OWNER', 'ADMIN', 'EMPLOYEE'],
   '/videos':     ['OWNER', 'ADMIN', 'EMPLOYEE'],
+  '/tasks':      ['OWNER', 'ADMIN', 'EMPLOYEE'],
   '/financials': ['OWNER', 'ADMIN'],
   '/employees':  ['OWNER', 'ADMIN'],
   '/reports':    ['OWNER', 'ADMIN'],
