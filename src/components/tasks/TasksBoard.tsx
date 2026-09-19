@@ -9,8 +9,9 @@ type TaskWithRelations = Task & {
   createdBy: Pick<User, 'name'> | null
 }
 
-const priorityStyles = {
-  HIGH:   'text-red-400 bg-red-900/40',
+const priorityStyles: Record<string, string> = {
+  URGENT: 'text-red-500 bg-red-900/40',
+  HIGH:   'text-orange-400 bg-orange-900/40',
   MEDIUM: 'text-amber-400 bg-amber-900/40',
   LOW:    'text-gray-400 bg-gray-700/40',
 }

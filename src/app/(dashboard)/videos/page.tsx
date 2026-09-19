@@ -3,21 +3,29 @@ import { db } from '@/lib/db'
 import { VideoPipeline } from '@/components/videos/VideoPipeline'
 
 export default async function VideosPage() {
-  const videos = await db.video.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      client:  { select: { name: true } },
-      creator: { select: { name: true } },
-      script:  { select: { videoNumber: true } },
-      _count:  { select: { feedbackLogs: true } },
-    },
-  })
+  const [videos, users] = await Promise.all([
+    db.video.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        client:  { select: { name: true } },
+        order:   { select: { packageName: true } },
+        creator: { select: { name: true } },
+        shoot:   { select: { scheduledDate: true } },
+        script:  { select: { videoNumber: true } },
+        _count:  { select: { feedbackLogs: true } },
+      },
+    }),
+    db.user.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, role: true }
+    })
+  ])
 
   return (
     <div>
-      <Topbar title="Videos" subtitle="9-stage production pipeline tracker" />
+      <Topbar title="Video Pipeline" subtitle="End-to-end video production tracking" />
       <div className="p-6">
-        <VideoPipeline videos={videos} />
+        <VideoPipeline videos={videos} users={users} />
       </div>
     </div>
   )

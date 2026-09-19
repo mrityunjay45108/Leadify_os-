@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import { formatDate, formatCurrency, cn } from '@/lib/utils'
 import Link from 'next/link'
-import { ArrowLeft, MapPin, Globe, Instagram, Phone, Mail } from 'lucide-react'
+import { ArrowLeft, MapPin, Globe, ExternalLink, Phone, Mail } from 'lucide-react'
 
 const availabilityColors: Record<string, string> = {
   AVAILABLE:   'bg-green-900/60 text-green-400',
@@ -12,9 +12,11 @@ const availabilityColors: Record<string, string> = {
   ON_HOLD:     'bg-gray-700/60 text-gray-400',
 }
 
-export default async function CreatorDetailPage({ params }: { params: { id: string } }) {
+export default async function CreatorDetailPage({ params }: any) {
+  const { id } = await params
+
   const creator = await db.creator.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       shoots: {
         orderBy: { scheduledDate: 'desc' },
@@ -26,7 +28,7 @@ export default async function CreatorDetailPage({ params }: { params: { id: stri
         take: 10,
         include: { client: { select: { name: true } } },
       },
-      payouts: {
+      creatorPayouts: {
         orderBy: { createdAt: 'desc' },
         take: 5,
       },
@@ -36,8 +38,8 @@ export default async function CreatorDetailPage({ params }: { params: { id: stri
 
   if (!creator) notFound()
 
-  const totalEarned = creator.payouts.reduce((s, p) => s + Number(p.totalPayout), 0)
-  const deliveredCount = creator.videos.filter((v) => v.status === 'DELIVERED').length
+  const totalEarned = creator.creatorPayouts.reduce((s: any, p: any) => s + Number(p.totalPayout), 0)
+  const deliveredCount = creator.videos.filter((v: any) => v.status === 'DELIVERED').length
 
   return (
     <div>
@@ -81,7 +83,7 @@ export default async function CreatorDetailPage({ params }: { params: { id: stri
                 {creator.instagramUrl && (
                   <a href={creator.instagramUrl} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2.5 text-amber-500 hover:text-amber-400">
-                    <Instagram size={13} />Instagram
+                    <ExternalLink size={13} />Instagram
                   </a>
                 )}
               </div>
@@ -175,41 +177,48 @@ export default async function CreatorDetailPage({ params }: { params: { id: stri
             {/* Payouts */}
             <div className="rounded-xl border border-[#222] bg-[#1a1a1a] p-5">
               <h3 className="text-sm font-semibold text-white mb-4">Payout History</h3>
-              {creator.payouts.length === 0 ? (
+              {creator.creatorPayouts.length === 0 ? (
                 <p className="text-sm text-gray-600">No payouts yet</p>
               ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[#222] text-left">
-                      <th className="pb-2 text-xs text-gray-500 font-medium">Videos</th>
-                      <th className="pb-2 text-xs text-gray-500 font-medium">Rate</th>
-                      <th className="pb-2 text-xs text-gray-500 font-medium">Total</th>
-                      <th className="pb-2 text-xs text-gray-500 font-medium">Status</th>
-                      <th className="pb-2 text-xs text-gray-500 font-medium">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#1e1e1e]">
-                    {creator.payouts.map((payout) => (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead className="text-gray-500 border-b border-[#222]">
+                      <tr>
+                        <th className="py-2 font-medium">Date</th>
+                        <th className="py-2 font-medium">Videos</th>
+                        <th className="py-2 font-medium">Rate</th>
+                        <th className="py-2 font-medium">Total</th>
+                        <th className="py-2 font-medium">Status</th>
+                        <th className="py-2 font-medium">Paid On</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#222]">
+                    {creator.creatorPayouts.map((payout: any) => (
                       <tr key={payout.id}>
+                        <td className="py-2 text-gray-400">{formatDate(payout.createdAt)}</td>
                         <td className="py-2 text-gray-300">{payout.videoCount}</td>
                         <td className="py-2 text-gray-400">{formatCurrency(Number(payout.ratePerVideo))}</td>
                         <td className="py-2 text-purple-400 font-medium">{formatCurrency(Number(payout.totalPayout))}</td>
                         <td className="py-2">
-                          <span className={cn('text-xs', {
-                            'text-green-400':  payout.status === 'PAID',
-                            'text-blue-400':   payout.status === 'APPROVED',
-                            'text-amber-400':  payout.status === 'PENDING',
-                          })}>
+                          <span className={cn(
+                            'text-[10px] font-bold uppercase',
+                            {
+                              'text-green-400':  payout.status === 'PAID',
+                              'text-blue-400':   payout.status === 'APPROVED',
+                              'text-amber-400':  payout.status === 'PENDING',
+                            }
+                          )}>
                             {payout.status}
                           </span>
                         </td>
-                        <td className="py-2 text-xs text-gray-600">
+                        <td className="py-2 text-gray-500">
                           {payout.paymentDate ? formatDate(payout.paymentDate) : '—'}
                         </td>
                       </tr>
                     ))}
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </div>

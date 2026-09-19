@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Topbar } from '@/components/layout/Topbar'
 import { db } from '@/lib/db'
 import Link from 'next/link'

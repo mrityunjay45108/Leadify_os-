@@ -19,6 +19,7 @@ import {
   Settings,
   LogOut,
   Zap,
+  LifeBuoy
 } from 'lucide-react'
 
 const navItems = [
@@ -75,6 +76,12 @@ const navItems = [
     href: '/financials',
     icon: DollarSign,
     roles: ['OWNER', 'ADMIN'],
+  },
+  {
+    label: 'Support',
+    href: '/support',
+    icon: LifeBuoy,
+    roles: ['OWNER', 'ADMIN', 'EMPLOYEE'],
   },
   {
     label: 'Employees',

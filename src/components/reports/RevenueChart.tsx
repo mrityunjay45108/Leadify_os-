@@ -64,7 +64,7 @@ export function RevenueChart({ payments }: Props) {
           <Tooltip
             contentStyle={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 8, fontSize: 12 }}
             labelStyle={{ color: '#fff' }}
-            formatter={(v: number) => [`₹${v.toLocaleString('en-IN')}`, 'Revenue']}
+            formatter={(v: any) => [`₹${v.toLocaleString('en-IN')}`, 'Revenue']}
           />
           <Area
             type="monotone"

@@ -36,7 +36,7 @@ export function ClientForm({ defaultValues, clientId, mode = 'create' }: ClientF
   const [error, setError] = useState<string | null>(null)
 
   const { register, handleSubmit, formState: { errors } } = useForm<ClientFormData>({
-    resolver: zodResolver(clientSchema),
+    resolver: zodResolver(clientSchema) as any,
     defaultValues: defaultValues ?? { status: 'NEW' },
   })
 

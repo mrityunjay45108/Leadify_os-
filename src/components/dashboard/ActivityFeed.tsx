@@ -19,6 +19,14 @@ export async function ActivityFeed() {
     created_order: '📦 New order created',
     shoot_scheduled: '📸 Shoot scheduled',
     revision_requested: '🔄 Revision requested',
+    script_status_changed_to_approved: '✅ Script approved',
+    script_status_changed_to_revision_required: '🔄 Script revision requested',
+    script_status_changed_to_sent_to_client: '📤 Script sent to client',
+    video_status_changed_to_revision: '🔄 Video revision requested',
+    video_status_changed_to_client_review: '👀 Video in client review',
+    video_status_changed_to_final_approved: '🏆 Video final approved',
+    video_status_changed_to_delivered: '🎬 Video delivered',
+    client_feedback_added: '💬 Client posted feedback',
   }
 
   return (

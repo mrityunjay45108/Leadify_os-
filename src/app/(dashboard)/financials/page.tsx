@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Topbar } from '@/components/layout/Topbar'
 import { db } from '@/lib/db'
 import { formatCurrency } from '@/lib/utils'

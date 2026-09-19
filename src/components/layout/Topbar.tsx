@@ -2,6 +2,7 @@
 
 import { Bell, Search } from 'lucide-react'
 import { useSession } from 'next-auth/react'
+import { NotificationBell } from './NotificationBell'
 
 interface TopbarProps {
   title: string
@@ -30,12 +31,7 @@ export function Topbar({ title, subtitle }: TopbarProps) {
         </div>
 
         {/* Notifications */}
-        <button className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-gray-400 hover:text-white transition-colors">
-          <Bell size={15} />
-          <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-black">
-            3
-          </span>
-        </button>
+        <NotificationBell />
       </div>
     </header>
   )

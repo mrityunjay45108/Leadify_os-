@@ -18,31 +18,25 @@ const updateSchema = z.object({
   assignedEmployeeId: z.string().optional(),
 })
 
-interface RouteParams {
-  params: { id: string }
-}
-
-export async function GET(req: NextRequest, { params }: RouteParams) {
+export async function GET(req: NextRequest, { params }: any) {
   const session = await auth()
   if (!session) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
 
+  const { id } = await params
+
   const client = await db.client.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       assignedEmployee: { include: { user: { select: { name: true, email: true } } } },
       orders: { orderBy: { createdAt: 'desc' } },
-      scripts: { orderBy: { createdAt: 'desc' }, take: 5 },
-      shoots:  { orderBy: { scheduledDate: 'desc' }, take: 5 },
-      videos:  { orderBy: { createdAt: 'desc' }, take: 10 },
-      payments: true,
+      scripts: { orderBy: { createdAt: 'desc' }, include: { creator: { select: { name: true } } } },
+      shoots: { orderBy: { scheduledDate: 'desc' } },
+      videos: { orderBy: { createdAt: 'desc' } },
+      payments: { orderBy: { createdAt: 'desc' } },
       supportTickets: { orderBy: { createdAt: 'desc' } },
-      assets: true,
-      activityLogs: {
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-        include: { user: { select: { name: true } } },
-      },
-    },
+      activityLogs: { orderBy: { createdAt: 'desc' }, include: { user: { select: { name: true } } } },
+      assets: { orderBy: { uploadedAt: 'desc' } },
+    }
   })
 
   if (!client) return NextResponse.json({ message: 'Client not found' }, { status: 404 })
@@ -50,50 +44,56 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
   return NextResponse.json(client)
 }
 
-export async function PATCH(req: NextRequest, { params }: RouteParams) {
+export async function PATCH(req: NextRequest, { params }: any) {
   const session = await auth()
   if (!session) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
 
+  const { id } = await params
+
   let body: unknown
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 })
-  }
+  try { body = await req.json() } catch { return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 }) }
 
   const result = updateSchema.safeParse(body)
   if (!result.success) {
-    return NextResponse.json(
-      { message: 'Validation failed', errors: result.error.flatten().fieldErrors },
-      { status: 422 }
-    )
+    return NextResponse.json({ message: 'Validation failed', errors: result.error.flatten().fieldErrors }, { status: 422 })
   }
 
-  const client = await db.client.update({
-    where: { id: params.id },
+  // Prevent email duplicate updates
+  if (result.data.email) {
+    const existing = await db.client.findUnique({ where: { email: result.data.email } })
+    if (existing && existing.id !== id) {
+      return NextResponse.json({ message: 'Email already used by another client' }, { status: 409 })
+    }
+  }
+
+  const updatedClient = await db.client.update({
+    where: { id },
     data: result.data,
   })
 
+  // Log activity
   await db.activityLog.create({
     data: {
-      userId:     session.user.id,
-      clientId:   client.id,
-      action:     'updated_client',
+      userId: session.user.id,
+      clientId: id,
+      action: 'updated_client',
       entityType: 'client',
-      entityId:   client.id,
-    },
+      entityId: id,
+    }
   })
 
-  return NextResponse.json(client)
+  return NextResponse.json(updatedClient)
 }
 
-export async function DELETE(req: NextRequest, { params }: RouteParams) {
+export async function DELETE(req: NextRequest, { params }: any) {
   const session = await auth()
-  if (!session) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  if (!['OWNER', 'ADMIN'].includes(session.user.role ?? '')) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
+  if (!session || !['OWNER', 'ADMIN'].includes(session.user.role ?? '')) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
   }
 
-  await db.client.delete({ where: { id: params.id } })
+  const { id } = await params
+
+  await db.client.delete({ where: { id } })
+
   return NextResponse.json({ message: 'Client deleted' })
 }
