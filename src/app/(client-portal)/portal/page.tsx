@@ -39,9 +39,19 @@ export default async function ClientPortalPage() {
     )
   }
 
-  const activeOrders = client.orders.filter(o => o.status !== 'COMPLETED' && o.status !== 'CANCELLED')
-  const totalOrdered = client.orders.reduce((acc, o) => acc + o.videoCount, 0)
-  const totalDelivered = client.orders.reduce((acc, o) => acc + o.deliveredVideos, 0)
+  // Next.js Server->Client component serialization fix for Prisma Decimal objects
+  const serializedOrders = client.orders.map(o => ({
+    ...o,
+    pricing: Number(o.pricing),
+    gstAmount: o.gstAmount ? Number(o.gstAmount) : null,
+    totalInvoice: Number(o.totalInvoice),
+    amountReceived: Number(o.amountReceived),
+    outstandingBalance: Number(o.outstandingBalance),
+  }))
+
+  const activeOrders = serializedOrders.filter(o => o.status !== 'COMPLETED' && o.status !== 'CANCELLED')
+  const totalOrdered = serializedOrders.reduce((acc, o) => acc + o.videoCount, 0)
+  const totalDelivered = serializedOrders.reduce((acc, o) => acc + o.deliveredVideos, 0)
   const remainingQuota = totalOrdered - totalDelivered
   
   // Video counts (across all orders)
@@ -129,7 +139,7 @@ export default async function ClientPortalPage() {
               </div>
             )}
             
-            <PortalInvoices orders={client.orders} />
+            <PortalInvoices orders={serializedOrders} />
             <PortalSupport tickets={client.supportTickets} />
           </div>
         </div>
